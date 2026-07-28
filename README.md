@@ -1,17 +1,26 @@
-# Air Quality Monitor | مراقب الجو الذكي
+<div align="center">
+
+# 🌬️ Air Quality Monitor
+
+### 7-Sensor Environmental Bench — Serial JSON, Optional Cloud Upload, Optional AI Summaries
 
 ![Arduino](https://img.shields.io/badge/Arduino-Uno%2FMega-00979D?logo=arduino&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white)
-![License](https://img.shields.io/badge/license-MIT-green)
+[![License: MIT](https://img.shields.io/badge/License-MIT-00C896.svg)](LICENSE)
+[![GitHub](https://img.shields.io/badge/GitHub-eahmeddarwish-181717?logo=github)](https://github.com/eahmeddarwish/air-quality-monitor)
 ![Status](https://img.shields.io/badge/status-bench--tested%20demo-yellow)
 
 **Built by [Ahmed Darwish](mailto:eahmeddarwish@gmail.com)**
 
-[Firmware](firmware/air_quality_node/air_quality_node.ino) · [Dashboard](app/air_quality_dashboard.py) · [Honest limitations](#-honest-limitations--محدوديات-صادقة)
+[📖 Documentation](#-architecture--معمارية-المشروع) · [⚠️ Honest Limitations](#-honest-limitations--محدوديات-صادقة) · [⭐ Star on GitHub](https://github.com/eahmeddarwish/air-quality-monitor)
+
+</div>
+
+![Air Quality Monitor data flow](docs/architecture.png)
 
 ---
 
-## 📋 Overview | نظرة عامة
+## 🌍 Overview | نظرة عامة
 
 **[English]**
 A 7-sensor environmental monitoring bench: temperature, humidity, UV
@@ -39,10 +48,41 @@ See [Technical decisions](#-technical-decisions--قرارات-تقنية) below.
 هنا، كل توليفةٍ من هذه ميزةٌ تُفعَّل وقت التشغيل في سكربتٍ واحد، لا ملفٍّ
 منفصل. راجع [القرارات التقنية](#-technical-decisions--قرارات-تقنية) أدناه.
 
-![Air Quality Monitor data flow](docs/architecture.png)
+---
 
-**[English]** *Sensor node → Serial JSON → dashboard, with Blynk upload and AI analysis as independent, optional branches — plus a hardware-free `--simulate` path.*
-**[العربية]** *عقدة الاستشعار ← JSON عبر Serial ← اللوحة، مع رفع Blynk والتحليل الذكي كفرعين اختياريين مستقلَّين — بالإضافة إلى مسار `--simulate` دون عتاد.*
+## ✨ Key Features | المميزات
+
+| Feature | Details |
+|---|---|
+| 🌡️ **7-Sensor Bench** | Temperature, humidity, UV, dust, CO₂ (eq.), TVOC, H₂S — one Arduino sensor node |
+| 🔌 **Serial JSON Streaming** | Sensor node streams structured JSON — no proprietary protocol to reverse-engineer |
+| 🖥️ **Bilingual Desktop Dashboard** | Python/Tkinter GUI rendering both English and Arabic (`python-bidi` + `arabic-reshaper`) |
+| ☁️ **Optional Blynk Upload** | Push live readings to a Blynk cloud dashboard — silently disabled if no token is set |
+| 🤖 **Optional AI Summary** | Ask an LLM (OpenAI) for a short plain-language environmental summary every few minutes |
+| 🎮 **Hardware-Free `--simulate`** | Exercise the full dashboard, Blynk upload, and AI analysis without any Arduino attached |
+| 🧩 **One Script, Feature Flags** | Consolidated from ~15 near-duplicate prototype scripts into one script with runtime feature flags |
+
+---
+
+## 🏗️ Architecture | معمارية المشروع
+
+🎨 [View/edit the diagram on Lucidchart](https://lucid.app/lucidchart/c8f645ee-ee62-42a6-896e-6c5122c2271b/edit)
+
+```
+ 7 sensors (Arduino)              Serial (JSON)             Python / Tkinter
+┌───────────────────┐                                    ┌─────────────────────────┐
+│ DHT11 · UV · H2S   │  ───────────────────────────────►  │ air_quality_dashboard.py │
+│ Dust · CCS811       │                                    │  ├─ Blynk upload (opt)  │──► Blynk Cloud
+└───────────────────┘                                    │  └─ AI summary (opt)    │──► OpenAI API
+                                                            └─────────────────────────┘
+                        --simulate flag replaces the Arduino with synthetic readings
+                                   on the exact same code path
+```
+
+| Run Mode | Command | Notes |
+|---|---|---|
+| Real hardware | `python app/air_quality_dashboard.py` | Reads live sensor data over Serial |
+| Simulation | `python app/air_quality_dashboard.py --simulate` | No hardware needed — synthetic readings |
 
 ---
 
@@ -166,9 +206,20 @@ Blynk، التحليل الذكي) تلقائيًا بدل التعطل أو ا�
 
 ---
 
-## 🚀 Getting started | البدء
+## 🚀 Quick Start | البدء السريع
 
-**[English]**
+### Option 1: Simulation — No Hardware | بدون عتاد (محاكاة)
+
+```bash
+git clone https://github.com/eahmeddarwish/air-quality-monitor.git
+cd air-quality-monitor
+python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+python app/air_quality_dashboard.py --simulate
+```
+
+### Option 2: Real Hardware | عتادٌ حقيقي
+
 1. Wire the sensors per the [table above](#-hardware--wiring--العتاد-والتوصيل)
    and upload `firmware/air_quality_node/air_quality_node.ino` to the Arduino
    (needs the `DHT11` and `Adafruit_CCS811` libraries).
@@ -178,43 +229,122 @@ Blynk، التحليل الذكي) تلقائيًا بدل التعطل أو ا�
    features).
 4. Run it:
    ```bash
-   python app/air_quality_dashboard.py            # real hardware
-   python app/air_quality_dashboard.py --simulate # no hardware needed
+   python app/air_quality_dashboard.py
    ```
+
+---
+
+## ⚙️ Configuration | الإعدادات
+
+All configuration lives in environment variables (see `.env.example`) — nothing is hardcoded:
+
+| Variable | Default | Notes |
+|---|---|---|
+| `AQM_SERIAL_PORT` | `COM3` | Serial port the sensor node is connected to (required) |
+| `AQM_BAUD_RATE` | `115200` | Must match the firmware's `Serial.begin(...)` rate |
+| `BLYNK_AUTH_TOKEN` | *(empty)* | Optional. Enables Blynk cloud upload |
+| `AQM_BLYNK_INTERVAL_S` | `5` | Seconds between Blynk uploads |
+| `OPENAI_API_KEY` | *(empty)* | Optional. Enables the AI environmental summary |
+| `AQM_OPENAI_MODEL` | `gpt-4o-mini` | Model used for the summary |
+| `AQM_ANALYSIS_INTERVAL_S` | `300` | Seconds between AI summary requests |
+
+---
+
+## 📁 Project Structure | هيكل المشروع
+
+```
+.
+├── app/
+│   ├── air_quality_dashboard.py   # Tkinter dashboard + Serial reader + optional Blynk/AI
+│   └── assets/                    # sensor icons used by the dashboard
+├── firmware/
+│   └── air_quality_node/
+│       └── air_quality_node.ino   # 7-sensor Arduino node, streams JSON over Serial
+├── docs/
+│   └── architecture.png
+├── .env.example
+├── requirements.txt
+└── LICENSE
+```
+
+---
+
+## 🔧 Hardware Used | الهاردوير المستخدم
+
+- Arduino Uno or Mega
+- DHT11 temperature/humidity sensor
+- Analog UV sensor (ML8511-class)
+- H₂S gas sensor (analog)
+- Sharp-style dust sensor (GP2Y1010AU0F-class)
+- Adafruit CCS811 (eCO₂ + TVOC, I2C)
+
+---
+
+## 🔒 Security Notes | ملاحظات أمنية
+
+**[English]**
+- Every credential (`BLYNK_AUTH_TOKEN`, `OPENAI_API_KEY`) is read **only**
+  from environment variables / a local `.env` file — never hardcoded in
+  source, and `.env` is git-ignored.
+- If a credential is missing, the dependent feature disables itself instead
+  of failing or silently sending an empty key.
+- The original prototype this was rebuilt from had both a live OpenAI key
+  and a live Blynk token committed directly to source — a reminder that any
+  key which has ever touched source control anywhere should be treated as
+  compromised and rotated.
 
 **[العربية]**
-1. وصّل المستشعرات حسب [الجدول أعلاه](#-hardware--wiring--العتاد-والتوصيل)
-   وارفع `firmware/air_quality_node/air_quality_node.ino` إلى الـArduino
-   (يحتاج مكتبتَي `DHT11` و`Adafruit_CCS811`).
-2. `pip install -r requirements.txt`
-3. انسخ `.env.example` إلى `.env` واملأ `AQM_SERIAL_PORT` الخاص بك (واختياريًا
-   `BLYNK_AUTH_TOKEN` / `OPENAI_API_KEY` إن أردت تفعيل هاتين الميزتين).
-4. شغّله:
-   ```bash
-   python app/air_quality_dashboard.py            # عتادٌ حقيقي
-   python app/air_quality_dashboard.py --simulate # دون الحاجة لعتاد
-   ```
+- كل بيانات الاعتماد (`BLYNK_AUTH_TOKEN`، `OPENAI_API_KEY`) تُقرأ **فقط**
+  من متغيرات البيئة / ملف `.env` محلي — أبدًا مثبَّتة في الكود، وملف `.env`
+  مستبعدٌ من Git.
+- إن كانت إحدى بيانات الاعتماد مفقودة، تُعطِّل الميزة المعتمِدة عليها نفسها
+  بدل الفشل أو إرسال مفتاحٍ فارغ صامتًا.
+- النموذج الأصلي الذي أُعيد بناء هذا المشروع منه كان يحتوي مفتاح OpenAI
+  حقيقيًّا ورمز Blynk حقيقيًّا مثبَّتين مباشرةً في الكود — تذكيرٌ بأن أي
+  مفتاحٍ لمس نظام تحكمٍ بالإصدارات يجب اعتباره مخترَقًا وتدويره.
 
 ---
 
-## 🗺️ Roadmap | خارطة الطريق
+## 🗺️ Roadmap | خطط التطوير
 
-- [ ] **Phase 1** — local CSV/SQLite logging alongside the live display
-- [ ] **Phase 2** — lab-calibrated H₂S/UV curves against a reference instrument
-- [ ] **Phase 3** — rolling-average smoothing option for noisy metrics
-- [ ] **Phase 4** — optional ESP32 WiFi variant (no PC/Serial link required)
+- [x] **Phase 1** — Consolidated 15 near-duplicate scripts into one feature-flagged dashboard, env-var config, hardware-free `--simulate` mode *(current)*
+- [ ] **Phase 2** — Local CSV/SQLite logging alongside the live display
+- [ ] **Phase 3** — Lab-calibrated H₂S/UV curves against a reference instrument
+- [ ] **Phase 4** — Rolling-average smoothing option for noisy metrics
+- [ ] **Phase 5** — Optional ESP32 WiFi variant (no PC/Serial link required)
 
 ---
 
-## License | الترخيص
+## 👤 Author | المطور
 
-MIT — see [LICENSE](LICENSE).
-
-## Author | المؤلف
+<div align="center">
 
 **Ahmed Darwish**
-[Email](mailto:eahmeddarwish@gmail.com) · [GitHub](https://github.com/eahmeddarwish)
+
+*Electrical & Computer Engineer | Python · Arduino · Raspberry Pi · AI/ML*
+
+[![Email](https://img.shields.io/badge/Email-eahmeddarwish%40gmail.com-EA4335?logo=gmail&logoColor=white)](mailto:eahmeddarwish@gmail.com)
+[![GitHub](https://img.shields.io/badge/GitHub-eahmeddarwish-181717?logo=github)](https://github.com/eahmeddarwish)
+
+</div>
 
 ---
 
-<p align="center"><sub>⭐ If consolidating 15 scripts into one saved you a headache, consider starring the repo.</sub></p>
+## 📄 License
+
+This project is licensed under the **MIT License** — see [LICENSE](LICENSE) for details.
+
+```
+MIT License — Copyright (c) 2026 Ahmed Darwish
+Free to use, modify, and distribute with attribution.
+```
+
+---
+
+<div align="center">
+
+⭐ **If consolidating 15 scripts into one saved you a headache, please give it a star on GitHub!** ⭐
+
+*Made with ❤️ by Ahmed Darwish*
+
+</div>
