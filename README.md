@@ -16,7 +16,7 @@
 
 </div>
 
-![Air Quality Monitor data flow](docs/architecture.png)
+![Air Quality Monitor bench setup](docs/hero.jpg)
 
 ---
 
@@ -67,6 +67,8 @@ See [Technical decisions](#-technical-decisions--قرارات-تقنية) below.
 ## 🏗️ Architecture | معمارية المشروع
 
 🎨 [View/edit the diagram on Lucidchart](https://lucid.app/lucidchart/c8f645ee-ee62-42a6-896e-6c5122c2271b/edit)
+
+![Air Quality Monitor data flow](docs/architecture.png)
 
 ```
  7 sensors (Arduino)              Serial (JSON)             Python / Tkinter
